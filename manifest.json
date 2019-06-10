@@ -1,0 +1,27 @@
+{
+  "name": "Plausible",
+  "version": "1.0",
+  "description": "Plausible extension to exclude your browser from analytics",
+  "optional_permissions": ["<all_urls>"],
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "declarativeContent",
+    "storage",
+    "activeTab",
+    "*://*.plausible.io/js/plausible.js"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_icon": {
+      "36": "images/plausible_favicon.png"
+    }
+  },
+  "icons": {
+    "36": "images/plausible_favicon.png"
+  },
+  "manifest_version": 2
+}
