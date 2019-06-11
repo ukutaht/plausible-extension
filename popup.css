@@ -1,5 +1,43 @@
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 1rem;
+}
+
+header img {
+  height: 1.5rem;
+}
+
+main {
+  padding: 1rem;
+  border-top: 1px solid lightgrey;
+}
+
 button {
-  height: 30px;
-  width: 30px;
-  outline: none;
+  display: inline-block;
+  background-color: #6574cd;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .5rem 1rem;
+  border-radius: .25rem;
+  text-decoration: none;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+}
+
+footer {
+  text-align: center;
+  border-top: 1px solid lightgrey;
+  color: grey;
+  font-size: 0.5rem;
+  padding: 1rem;
 }

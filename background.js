@@ -2,14 +2,21 @@
 
 const scriptsToBlock = [
   '*://*.plausible.io/js/plausible.js',
+  '*://*.plausible.io/js/analytics.js'
 ]
 
-chrome.runtime.onInstalled.addListener(function() {
-  chrome.storage.sync.set({blacklist: []});
-  updateDeclarativeContent()
-});
+let blocker;
 
-function createSetIconAction(path, callback) {
+chrome.storage.sync.get('blacklist', ({blacklist: blacklist}) => {
+  blacklist = blacklist || []
+  chrome.storage.sync.set({blacklist: blacklist}, () => {
+    updateIcon(blacklist)
+    blocker = blockRequests(blacklist)
+    chrome.webRequest.onBeforeRequest.addListener(blocker, {urls: scriptsToBlock, types: ['xmlhttprequest', 'script'] }, ['blocking'] )
+  })
+})
+
+function setIcon(path, callback) {
   var canvas = document.createElement('canvas');
   var ctx = canvas.getContext('2d');
   var image = new Image();
@@ -22,21 +29,19 @@ function createSetIconAction(path, callback) {
   image.src = chrome.runtime.getURL(path);
 }
 
-function updateDeclarativeContent() {
-  chrome.storage.sync.get('blacklist', ({blacklist: blacklist}) => {
-    chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-      createSetIconAction('images/plausible_favicon_grey.png', function(setIconAction) {
-        const rules = blacklist.map((hostname) => {
-          return {
-            conditions: [
-              new chrome.declarativeContent.PageStateMatcher({pageUrl: {hostContains: `.${hostname}`}}),
-              new chrome.declarativeContent.PageStateMatcher({pageUrl: {hostContains: `${hostname}`}})
-            ],
-            actions: [setIconAction]
-          }
-        })
-        chrome.declarativeContent.onPageChanged.addRules(rules)
+function updateIcon(blacklist) {
+  chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+    setIcon('images/plausible_favicon_grey.png', function(setIconAction) {
+      const rules = blacklist.map((hostname) => {
+        return {
+          conditions: [
+            new chrome.declarativeContent.PageStateMatcher({pageUrl: {hostEquals: hostname}}),
+            new chrome.declarativeContent.PageStateMatcher({pageUrl: {hostEquals: `www.${hostname}`}})
+          ],
+          actions: [setIconAction]
+        }
       })
+      chrome.declarativeContent.onPageChanged.addRules(rules)
     })
   })
 }
@@ -44,44 +49,18 @@ function updateDeclarativeContent() {
 function blockRequests(blacklist) {
   return function(details) {
     const {initiator} = details
-    const basename = initiator ? (new URL(initiator)).hostname : null
+    const basename = initiator ? (new URL(initiator)).hostname.replace(/^www\./, '') : null
     const found = blacklist.length && blacklist.find(hostname => hostname === basename)
 
     return {cancel: !!found}
   }
 }
 
-let blocker = function() {};
-chrome.webRequest.onBeforeRequest.addListener(blocker, {urls: [], types: ['xmlhttprequest', 'script'] }, ['blocking'])
-
 chrome.storage.onChanged.addListener(({blacklist: blacklist}) => {
-  updateDeclarativeContent()
+  updateIcon(blacklist.newValue)
   chrome.webRequest.onBeforeRequest.removeListener(blocker)
 
-  console.log('Blacklist updated', blacklist)
   blocker = blockRequests(blacklist.newValue)
 
   chrome.webRequest.onBeforeRequest.addListener(blocker, {urls: scriptsToBlock, types: ['xmlhttprequest', 'script'] }, ['blocking'] )
-})
-
-
-const requestPermissionForUrl = (basename) => {
-  chrome.permissions.request({
-    origins: [`*://*.${basename}/*`]
-  }, function(granted) {
-    if (!granted) return alert(`Please grant permissions on ${basename} to block your visits`)
-    if (chrome.runtime.lastError) return console.log(chrome.runtime.lastError.message)
-
-    chrome.storage.sync.get('blacklist', function({blacklist: list}) {
-      const newBlacklist = [ ...new Set([...list, basename])]
-      chrome.storage.sync.set({blacklist: newBlacklist})
-    })
-  })
-}
-
-chrome.browserAction.onClicked.addListener(function(tab) {
-  const basename = (new URL(tab.url)).hostname
-  if (!basename) return alert('Invalid website')
-
-  requestPermissionForUrl(basename)
 })

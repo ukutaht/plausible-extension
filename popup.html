@@ -4,7 +4,19 @@
     <link rel="stylesheet" type="text/css" href="popup.css">
   </head>
   <body>
-    <button id="changeColor"></button>
+    <header>
+      <img src="images/plausible_logo.png" />
+    </header>
+    <main>
+      <div style="margin-bottom: 1rem; margin-top: 0;">Tracking is currently <b id="trackingState"></b> on <span id="activeTab">plausible.io</span></div>
+      <button id="toggleTracking"></button>
+    </main>
+
+    <footer>
+      &copy;2019 Plausible Insights.<br />
+      All rights reserved.
+    </footer>
+
     <script src="popup.js"></script>
   </body>
 </html>
