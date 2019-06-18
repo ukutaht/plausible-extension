@@ -5,24 +5,31 @@ function getCurrentTab(callback) {
   });
 }
 
-function requestPermissionForUrl(basename) {
-  chrome.permissions.request({
-    origins: [`*://*.${basename}/*`]
-  }, function(granted) {
-    if (!granted) return alert(`Please grant permissions on ${basename} to block your visits`)
-    if (chrome.runtime.lastError) return console.log(chrome.runtime.lastError.message)
+function showRefresh(newState) {
+  return function() {
+    document.getElementById('trackingState').innerHTML = newState
+    document.getElementById('toggleTracking').innerHTML = 'Refresh'
+    document.getElementById('toggleTracking').onclick = function() {
+      chrome.tabs.query({active: true, currentWindow: true}, ([tab]) => {
+        var code = 'window.location.reload();';
+        chrome.tabs.executeScript(tab.id, {code: code});
+        window.close()
+      });
+    }
+  }
+}
 
-    chrome.storage.sync.get('blacklist', function({blacklist: list}) {
-      const newBlacklist = [ ...new Set([...list, basename])]
-      chrome.storage.sync.set({blacklist: newBlacklist}, updateUI)
-    })
+function disableTracking(basename) {
+  chrome.storage.sync.get('blacklist', function({blacklist: list}) {
+    const newBlacklist = [ ...new Set([...list, basename])]
+    chrome.storage.sync.set({blacklist: newBlacklist}, showRefresh('disabled'))
   })
 }
 
 function enableTracking(basename) {
   chrome.storage.sync.get('blacklist', function({blacklist: list}) {
     const newBlacklist = list.filter((hostname) => hostname !== basename)
-    chrome.storage.sync.set({blacklist: newBlacklist}, updateUI)
+    chrome.storage.sync.set({blacklist: newBlacklist}, showRefresh('enabled'))
   })
 }
 
@@ -51,7 +58,7 @@ document.getElementById("toggleTracking").onclick = function(e) {
     const action = e.target.textContent
 
     if (action === 'Disable tracking') {
-      requestPermissionForUrl(tabHostname)
+      disableTracking(tabHostname)
     } else if (action === 'Enable tracking') {
       enableTracking(tabHostname)
     } else {

@@ -1,16 +1,19 @@
 {
   "name": "Plausible",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Plausible extension to exclude your browser from analytics",
-  "optional_permissions": ["<all_urls>"],
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "declarativeContent",
     "storage",
     "activeTab",
-    "*://*.plausible.io/js/plausible.js"
+    "<all_urls>"
   ],
+  "browser_specific_settings": {
+  "gecko": {
+    "id": "addon@plausible.io"
+  }
+  },
   "background": {
     "scripts": ["background.js"],
     "persistent": true
